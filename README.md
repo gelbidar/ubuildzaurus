@@ -231,8 +231,8 @@ the scripts and board config, is GPL-2.0 as well.
 
 Support for the older ARMv4 SL models is planned.
 
-This project was written with the assistance of Claude Opus 5, as a learning
-exercise for CPL. If you see C, it's probably AI-written.
+This project was written with the assistance of Qwen 3.5 9B as a learning
+exercise for CPL. If you see C, it's probably the result of AI iterating on my buggy drafts.
 
 Everything here has been built and tested on genuine Zaurus hardware. None of it
 is theoretical or emulator-only.
