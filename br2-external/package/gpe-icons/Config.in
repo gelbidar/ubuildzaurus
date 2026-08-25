@@ -1,0 +1,12 @@
+config BR2_PACKAGE_GPE_ICONS
+	bool "gpe-icons"
+	help
+	  The shared GPE icon set (/usr/share/gpe/pixmaps/default).
+
+	  This is data only - no code - but it is not optional for the GPE
+	  apps: they all call gpe_load_icons() with a table of bare icon
+	  names ("save_as", "cut", "dir-up", ...) which libgpewidget resolves
+	  against this directory, and every one of them aborts at startup if
+	  a single icon is missing.
+
+	  http://gpe.linuxtogo.org/ (defunct; sourced from the Debian archive)

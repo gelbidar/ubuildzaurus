@@ -1,0 +1,10 @@
+config BR2_PACKAGE_GPE_EDIT
+	bool "gpe-edit"
+	depends on BR2_PACKAGE_LIBGTK2
+	select BR2_PACKAGE_LIBGPEWIDGET
+	help
+	  GPE Editor - a small GTK2 plain-text editor built for PDA screens:
+	  toolbar-driven, single window, find/replace, and a file selector
+	  sized for a stylus rather than a mouse.
+
+	  http://gpe.linuxtogo.org/ (defunct; sourced from the Debian archive)

@@ -1,0 +1,22 @@
+#!/bin/sh
+# try the current ts.conf on the framebuffer, no X. ctrl-c quits
+export TSLIB_CONFFILE=/etc/ts.conf
+export TSLIB_CALIBFILE=/etc/pointercal
+dev=$(awk '
+	/^N: Name=/     { name = $0 }
+	/^H: Handlers=/ {
+		if (name ~ /[Aa][Dd][Ss]7846/ || name ~ /[Tt]ouch/) {
+			for (i = 1; i <= NF; i++)
+				if ($i ~ /^event/) { print "/dev/input/" $i; exit }
+		}
+	}
+' /proc/bus/input/devices)
+if [ -z "$dev" ]; then
+	for e in /dev/input/event2 /dev/input/event3 /dev/input/event1; do
+		[ -e "$e" ] && dev="$e" && break
+	done
+fi
+[ -z "$dev" ] && { echo "ztest: no touchscreen found"; exit 1; }
+export TSLIB_TSDEVICE="$dev"
+echo "ztest: $dev,  $(grep -c '^module ' /etc/ts.conf) filter modules — Ctrl-C to quit"
+exec ts_test

@@ -1,0 +1,33 @@
+#!/bin/sh
+# calibrate touch into /etc/pointercal. text console, not under X
+# needed after every reflash
+export TSLIB_CONFFILE=/etc/ts.conf
+export TSLIB_CALIBFILE=/etc/pointercal
+
+# tslib auto-scan only takes INPUT_PROP_DIRECT, ads7846 doesn't set it
+dev=$(awk '
+    /^N: Name=/       { name = $0 }
+    /^H: Handlers=/   {
+        if (name ~ /[Aa][Dd][Ss]7846/ || name ~ /[Tt]ouch/) {
+            for (i = 1; i <= NF; i++)
+                if ($i ~ /^event/) { print "/dev/input/" $i; exit }
+        }
+    }
+' /proc/bus/input/devices)
+
+# Fallbacks if the name match missed (built-in kbd is event0/1; the ads7846
+# module loads later, typically event2).
+if [ -z "$dev" ]; then
+    for e in /dev/input/event2 /dev/input/event3 /dev/input/event1; do
+        [ -e "$e" ] && dev="$e" && break
+    done
+fi
+
+if [ -z "$dev" ]; then
+    echo "zcal: no touchscreen event node found (is ads7846 loaded?)"
+    exit 1
+fi
+
+echo "zcal: calibrating on $dev"
+export TSLIB_TSDEVICE="$dev"
+exec ts_calibrate

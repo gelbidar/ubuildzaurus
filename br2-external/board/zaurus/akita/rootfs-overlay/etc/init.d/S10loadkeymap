@@ -1,0 +1,15 @@
+#!/bin/sh
+# load the console keymap. zkbd reloads it by hand
+
+case "$1" in
+	start)
+		echo "Loading Zaurus console keymap"
+		loadkeys /etc/zaurus-console.kmap 2>&1
+		;;
+	stop)
+		;;
+	*)
+		echo "Usage: $0 {start|stop}"
+		exit 1
+		;;
+esac

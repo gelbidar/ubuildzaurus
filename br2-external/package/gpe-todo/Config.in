@@ -1,0 +1,12 @@
+config BR2_PACKAGE_GPE_TODO
+	bool "gpe-todo"
+	depends on BR2_PACKAGE_LIBGTK2
+	select BR2_PACKAGE_LIBGPEWIDGET
+	select BR2_PACKAGE_LIBTODODB
+	select BR2_PACKAGE_LIBGPEPIMC
+	help
+	  GPE To-Do List - the PIM task manager: categorised to-do items with
+	  due dates, priorities and completion state, stored in the shared
+	  GPE sqlite database (~/.gpe/todo.db) via libtododb.
+
+	  http://gpe.linuxtogo.org/ (defunct; sourced from the Debian archive)

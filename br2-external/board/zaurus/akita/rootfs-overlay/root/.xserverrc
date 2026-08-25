@@ -1,0 +1,33 @@
+#!/bin/sh
+# Backported kdrive Xfbdev — renders straight to /dev/fb0.
+# startx appends Xorg-style args (vtN, -keeptty) that kdrive doesn't grok;
+# strip the vt* ones and pass the rest (display, -auth cookie, etc.).
+args=""
+for a in "$@"; do
+	case "$a" in
+		vt*|-vt*|-keeptty|-novtswitch|-background) ;;   # drop unsupported
+		*) args="$args $a" ;;
+	esac
+done
+# -dpi 150: the panel is ~200dpi physically; telling X a higher DPI makes
+# point-sized (Xft) fonts in toolkit apps render larger. Matchbox's own theme
+# fonts are pixel-sized so this mainly benefits GTK/pt apps — bump/lower to
+# taste (e.g. 120 for a bit smaller, 170 for bigger).
+# -screen 480x640@270: give the driver the NATIVE panel size (480x640) plus a
+# rotation; kdrive's shadow-fb path swaps it to 640x480 landscape for clients
+# and rotates touch input too (KdComputePointerMatrix). Passing the rotated
+# size (640x480) instead makes it try to reprogram the fixed panel -> EINVAL.
+# If the image is rotated the wrong way, change @270 to @90.
+# -extension RANDR: our rotation is static (set once above via the -screen
+# @270 flag, never touched at runtime), so RandR's dynamic-reconfiguration
+# side isn't needed. But its QUERY side is actively misleading: our
+# fbdevRandRGetInfo (xfbdev/fbdev.c) reports RandR clients the NATIVE
+# pre-rotation size (480x640) plus a separate rotation flag - the standard,
+# correct way to report a rotated screen over RandR - but GDK/GTK doesn't
+# apply that rotation when computing its own screen width/height, so GTK
+# apps see 480 instead of the real (rotated) 640 and touch/window geometry
+# breaks for roughly the far half of the screen. Plain Xlib apps (matchbox,
+# xterm) never queried RandR at all and were always fine. Disabling the
+# extension removes the bad information source entirely, forcing everyone
+# onto the same core-protocol screen-size query that already works.
+exec /usr/bin/Xfbdev $args -dpi 150 -screen 480x640@270 -extension RANDR

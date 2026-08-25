@@ -1,0 +1,39 @@
+# Custom packages: things not in mainline Buildroot, or Buildroot's version
+# doesn't fit this target (e.g. mainline "vte" is GTK3/Rust-only).
+#
+# lxterminal + legacy-vte were packaged here and worked (GTK2-mode VTE
+# 0.28.2 + lxterminal via AUTORECONF), but were removed - xterm covers the
+# terminal need and nothing else in this tree links against vte.
+
+# --- GPE Palmtop Environment (PIM apps + their stack) ------------------
+# GPE is the ~2003-2008 GTK2 desktop that shipped on Zaurus/iPAQ-class PDAs,
+# so it is a natural fit here, but none of it is in mainline Buildroot and
+# every upstream host (gpe.linuxtogo.org, gpe.handhelds.org) is gone. The
+# tarballs below come from the Debian archive, except gpe-sketchbook which
+# only survives in the Internet Archive.
+#
+# Dependency order (each needs the ones above it):
+#   sqlite2 -> libgpewidget -> libgpepimc -> libtododb -> gpe-todo
+#   gpe-icons is runtime data every GPE app needs to start at all.
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/sqlite2/Config.in"
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/gpe-icons/Config.in"
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/libgpewidget/Config.in"
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/libgpepimc/Config.in"
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/libtododb/Config.in"
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/gpe-edit/Config.in"
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/gpe-todo/Config.in"
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/gpe-sketchbook/Config.in"
+#
+# Deliberately NOT packaged: gpe-filemanager. Its source is fine (it
+# cross-compiles and links clean against our toolchain), but configure.ac
+# requires gnome-vfs-2.0 + gnome-vfs-module-2.0, and GnomeVFS was killed off
+# in 2009. It is not in Buildroot and cannot be added cheaply: gnome-vfs 2.24
+# needs GConf, which needs ORBit2 (a CORBA ORB) - three more dead packages to
+# write before gpe-filemanager could even configure. Porting it to GIO instead
+# means rewriting ~34 gnome_vfs_* call sites incl. the async monitors and MIME
+# handling. Either way it is a project of its own, not a package definition.
+
+# --- Audio ---------------------------------------------------------------
+# gqmpeg: GTK2 GUI wrapper around mpg123 (see Config.in - it spawns the
+# mpg123 binary rather than linking libmpg123, genuinely just a frontend).
+source "$BR2_EXTERNAL_ZAURUS_PATH/package/gqmpeg/Config.in"

@@ -1,0 +1,27 @@
+From: Zaurus OS
+Subject: [PATCH] ASoC: pxa2xx-i2s: don't register PCM ops twice in one rtd
+
+This CPU DAI component and the platform component (pxa2xx-pcm.c) both
+register pxa2xx_pcm_ops, and spitz.c names both in its DAI link. The soc
+code walks every component in the rtd, so each PCM callback fired twice
+per substream: open() requested the DMA channel twice and leaked the first
+prtd, close() released the channel twice and kfree()d the same prtd twice.
+
+The platform component owns the ops here, so drop them from the DAI.
+---
+--- a/sound/soc/pxa/pxa2xx-i2s.c
++++ b/sound/soc/pxa/pxa2xx-i2s.c
+@@ -358,11 +358,10 @@
+ 	.symmetric_rates = 1,
+ };
+ 
++/* no ops/pcm_new/pcm_free on purpose. boards naming both this and
++ * pxa-pcm-audio in one dai link run every pcm callback twice. */
+ static const struct snd_soc_component_driver pxa_i2s_component = {
+ 	.name		= "pxa-i2s",
+-	.ops		= &pxa2xx_pcm_ops,
+-	.pcm_new	= pxa2xx_soc_pcm_new,
+-	.pcm_free	= pxa2xx_pcm_free_dma_buffers,
+ };
+ 
+ static int pxa2xx_i2s_drv_probe(struct platform_device *pdev)

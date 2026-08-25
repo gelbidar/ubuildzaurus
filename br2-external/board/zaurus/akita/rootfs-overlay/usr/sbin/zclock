@@ -1,0 +1,76 @@
+#!/bin/sh
+# set the clock. no RTC so every boot is epoch
+# numbers only, nothing to type. tz already set so use local time
+# hour takes 0-23. 1-12 asks am/pm, anything else is taken as 24h
+
+set -u
+
+# NOTE: prompts/messages go to stderr (>&2), not stdout - callers use
+# X=$(ask ...) to capture the answer, and command substitution captures
+# ALL of a function's stdout, not just its final echo. Anything meant for
+# the terminal but NOT for the caller to capture must go to stderr.
+ask() {
+    _prompt="$1"; _min="$2"; _max="$3"
+    while true; do
+        printf "%s (%s-%s): " "$_prompt" "$_min" "$_max" >&2
+        read -r _val
+        case "$_val" in
+            ''|*[!0-9]*)
+                echo "  please enter a plain number" >&2
+                continue
+                ;;
+        esac
+        if [ "$_val" -ge "$_min" ] && [ "$_val" -le "$_max" ]; then
+            echo "$_val"
+            return
+        fi
+        echo "  out of range, try again" >&2
+    done
+}
+
+echo "zclock: set the system clock (local time)"
+echo ""
+
+YEAR=$(ask "Year"   2020 2099)
+MONTH=$(ask "Month" 1 12)
+DAY=$(ask "Day"     1 31)
+HOUR=$(ask "Hour" 0 23)
+MIN=$(ask "Minute"  0 59)
+
+# 0 or 13-23 can only be 24h, so don't bother asking. 1-12 is ambiguous.
+if [ "$HOUR" -eq 0 ] || [ "$HOUR" -ge 13 ]; then
+    HOUR24=$HOUR
+else
+    while true; do
+        printf "AM or PM - type 1 for AM, 2 for PM: "
+        read -r AMPM
+        case "$AMPM" in
+            1) HOUR24=$HOUR; [ "$HOUR24" = "12" ] && HOUR24=0; break ;;
+            2) HOUR24=$HOUR; [ "$HOUR24" != "12" ] && HOUR24=$((HOUR + 12)); break ;;
+            *) echo "  please type 1 or 2" ;;
+        esac
+    done
+fi
+
+STAMP=$(printf "%04d-%02d-%02d %02d:%02d:00" "$YEAR" "$MONTH" "$DAY" "$HOUR24" "$MIN")
+echo ""
+echo "Setting system clock to: $STAMP (local time)"
+
+if date -s "$STAMP" >/dev/null 2>&1; then
+    echo "Done. Current time is now:"
+    date
+else
+    echo "zclock: 'date -s' failed - is $STAMP a valid date?"
+    exit 1
+fi
+
+# Future-proofing: if a real-time clock ever gets enabled (it isn't today -
+# CONFIG_RTC_DRV_PXA is off), persist to it so this survives a reboot.
+if [ -e /dev/rtc0 ]; then
+    if hwclock -w 2>/dev/null; then
+        echo "(also wrote to hardware clock /dev/rtc0)"
+    fi
+else
+    echo "(no hardware clock, so you'll need to run zclock again after"
+    echo " the next reboot)"
+fi

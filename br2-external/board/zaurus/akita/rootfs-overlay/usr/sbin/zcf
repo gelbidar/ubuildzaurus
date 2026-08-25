@@ -1,0 +1,49 @@
+#!/bin/sh
+# mount cf at /mnt/cf. zcf umount to unmount
+# libata, so sda not hda. tries whatever nodes turn up
+
+MNT=/mnt/cf
+
+if [ "$1" = "umount" ]; then
+	umount "$MNT" 2>/dev/null && echo "unmounted $MNT" || echo "not mounted"
+	exit 0
+fi
+
+echo "== pcmcia socket status =="
+if [ -d /sys/bus/pcmcia/devices ] && [ -n "$(ls -A /sys/bus/pcmcia/devices 2>/dev/null)" ]; then
+	ls -1 /sys/bus/pcmcia/devices
+else
+	echo "  (no pcmcia device bound - card not detected, or not inserted)"
+fi
+
+echo "== recent card-detect dmesg =="
+dmesg 2>/dev/null | grep -iE 'pcmcia|pata_pcmcia|ata[0-9]|sd [0-9]|sda|hda' | tail -20 \
+	|| echo "  (nothing found)"
+
+echo "== candidate block devices =="
+cat /proc/partitions 2>/dev/null
+
+FOUND=""
+for dev in /dev/sda1 /dev/sda /dev/hda1 /dev/hda; do
+	[ -b "$dev" ] && FOUND="$FOUND $dev"
+done
+
+if [ -z "$FOUND" ]; then
+	echo "== no /dev/sda* or /dev/hda* node exists =="
+	echo "  If the card is inserted and nothing above shows it, the socket"
+	echo "  may need a moment after insert, or try reseating the card."
+	exit 1
+fi
+
+mkdir -p "$MNT"
+for dev in $FOUND; do
+	if mount "$dev" "$MNT" 2>/dev/null; then
+		echo "== mounted $dev at $MNT =="
+		ls -la "$MNT"
+		exit 0
+	fi
+done
+
+echo "== found device node(s):$FOUND but mount failed on all of them =="
+echo "  Run 'zcf' again after checking dmesg above for the real error."
+exit 1

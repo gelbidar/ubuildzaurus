@@ -1,0 +1,10 @@
+#!/bin/sh
+# zxfont N. throwaway xterm at DejaVu Sans Mono size N
+# once one looks right put it in .Xresources as XTerm*faceSize
+
+if [ -z "$1" ]; then
+    echo "usage: zxfont N   (try a few, e.g.: zxfont 6   zxfont 7   zxfont 8)"
+    exit 1
+fi
+
+xterm -fa 'DejaVu Sans Mono' -fs "$1" -geometry 44x22 -title "zxfont $1" &

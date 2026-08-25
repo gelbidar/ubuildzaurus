@@ -1,0 +1,69 @@
+From: Zaurus OS
+Subject: [PATCH] src/Makefile.am: fix cross-compile build
+
+Two real cross-compile bugs, found and fixed by actually building this
+against the project's cross toolchain (not assumed from reading source):
+
+1. INCLUDES had "-I$(includedir)". With --prefix=/usr (required for a
+   Buildroot target install), $(includedir) expands to literally
+   /usr/include - the cross-compiler's own safety wrapper then refuses
+   the build outright ("unsafe header/library path used in
+   cross-compilation"), since that's the HOST's /usr/include, not the
+   target sysroot's. All the real GTK2/glib/etc headers already come in
+   correctly via $(GTK_CFLAGS) (pkg-config, properly sysroot-prefixed);
+   this extra flag was never needed.
+
+2. gqmpeg_LDADD was missing -lX11 and -lm. dock.c calls XSetWMHints
+   directly and ui2_dial.c calls atan2, but neither libX11 nor libm was
+   ever linked explicitly - relying on getting pulled in transitively
+   through libgtk-x11-2.0, which modern binutils refuses ("DSO missing
+   from command line"). Same class of fix already applied to
+   libgpewidget elsewhere in this tree.
+
+Patches Makefile.am *and* the pre-generated Makefile.in in lockstep (no
+AUTORECONF - this is a real 2004 automake/libtool era build system, not
+worth re-running autoreconf against just for this).
+
+Verified by a full standalone cross-compile through to a linked ARM ELF
+binary with the project's actual toolchain before writing this patch.
+---
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -4,7 +4,7 @@
+ INCLUDES = -I$(srcdir) -I$(builddir)    \
+ 	-I$(top_srcdir) -I$(top_builddir)       \
+ 	-DLOCALEDIR=\""$(localedir)"\"		\
+-	-I$(includedir) $(GTK_CFLAGS)
++	$(GTK_CFLAGS)
+ 
+ module_SLIK = \
+ 	ui2_button.c	\
+@@ -190,7 +190,7 @@
+ 	window.h	\
+ 	$(module_mpg123) $(module_xmp) $(module_ogg123) $(module_radio)
+ 
+-gqmpeg_LDADD = $(GTK_LIBS) $(LIBPNG)
++gqmpeg_LDADD = $(GTK_LIBS) $(LIBPNG) -lX11 -lm
+ 
+ EXTRA_DIST = \
+ 	$(extra_SLIK)	\
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -151,7 +151,7 @@
+ INCLUDES = -I$(srcdir) -I$(builddir)    \
+ 	-I$(top_srcdir) -I$(top_builddir)       \
+ 	-DLOCALEDIR=\""$(localedir)"\"		\
+-	-I$(includedir) $(GTK_CFLAGS)
++	$(GTK_CFLAGS)
+ 
+ 
+ module_SLIK = \
+@@ -342,7 +342,7 @@
+ 	$(module_mpg123) $(module_xmp) $(module_ogg123) $(module_radio)
+ 
+ 
+-gqmpeg_LDADD = $(GTK_LIBS) $(LIBPNG)
++gqmpeg_LDADD = $(GTK_LIBS) $(LIBPNG) -lX11 -lm
+ 
+ EXTRA_DIST = \
+ 	$(extra_SLIK)	\

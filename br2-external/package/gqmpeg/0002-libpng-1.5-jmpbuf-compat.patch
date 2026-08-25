@@ -1,0 +1,20 @@
+From: Zaurus OS
+Subject: [PATCH] src/ui_pixbuf_save.c: libpng 1.5+ opaque png_struct
+
+png_struct became an opaque type in libpng 1.5 (2010) - direct member
+access like png_ptr->jmpbuf no longer compiles against our libpng 1.6.x
+("invalid use of incomplete typedef"). Use the png_jmpbuf() accessor
+macro instead, the standard libpng-1.5+-compatible replacement. Only
+one call site in the whole tree used the old direct-access pattern.
+---
+--- a/src/ui_pixbuf_save.c
++++ b/src/ui_pixbuf_save.c
+@@ -86,7 +86,7 @@
+ 	    	return FALSE;
+ 		}
+ 
+-	if (setjmp (png_ptr->jmpbuf))
++	if (setjmp (png_jmpbuf(png_ptr)))
+ 		{
+ 		png_destroy_write_struct (&png_ptr, &info_ptr);
+ 		fclose (handle);

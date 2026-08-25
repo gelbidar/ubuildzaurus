@@ -1,0 +1,17 @@
+#!/bin/sh
+# start X. use this, not startx
+# unbinds fbcon first, else it draws over X and resume strands you
+FBCON=
+for v in /sys/class/vtconsole/vtcon*; do
+	case "$(cat "$v/name" 2>/dev/null)" in
+		*"frame buffer"*) FBCON="$v" ;;
+	esac
+done
+
+[ -n "$FBCON" ] && echo 0 > "$FBCON/bind" 2>/dev/null
+
+startx "$@"
+
+# --- back from X: reattach the console ---
+[ -n "$FBCON" ] && echo 1 > "$FBCON/bind" 2>/dev/null
+clear 2>/dev/null

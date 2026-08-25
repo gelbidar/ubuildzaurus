@@ -1,0 +1,71 @@
+#!/bin/sh
+# zkeyfix - redo individual captures without rerunning the whole zkeymap
+# walk. text console, not under X. appends to /root/zkeymap-latest.log
+
+set -u
+
+if pidof Xfbdev >/dev/null 2>&1; then
+    echo "zkeyfix: X is running. Quit X first, then run zkeyfix from the"
+    echo "         text console."
+    exit 1
+fi
+if ! command -v showkey >/dev/null 2>&1; then
+    echo "zkeyfix: 'showkey' not found - reflash the latest image first."
+    exit 1
+fi
+
+if [ -L /root/zkeymap-latest.log ] || [ -f /root/zkeymap-latest.log ]; then
+    LOG=$(readlink -f /root/zkeymap-latest.log 2>/dev/null || echo /root/zkeymap-latest.log)
+else
+    STAMP=$(date +%Y%m%d-%H%M%S 2>/dev/null || echo now)
+    LOG="/root/zkeymap-$STAMP.log"
+    ln -sf "$LOG" /root/zkeymap-latest.log 2>/dev/null
+    echo "zkeyfix: no existing zkeymap log found, starting a new one:"
+    echo "         $LOG"
+fi
+
+restore() { kbd_mode -a 2>/dev/null; stty sane 2>/dev/null; }
+trap 'restore' EXIT INT TERM
+
+log()  { printf '%s\n' "$*" >>"$LOG"; }
+both() { printf '%s\n' "$*"; printf '%s\n' "$*" >>"$LOG"; }
+
+pause() {
+    stty sane 2>/dev/null
+    printf "  %s" "${1:-[press ENTER to continue] }"
+    # shellcheck disable=SC2034
+    read -r _zkeyfix_wait
+}
+
+cap() {
+    _section="$1"; _label="$2"; _instr="$3"
+    printf '\n### %s: %s (zkeyfix redo) ###\n' "$_section" "$_label" >>"$LOG"
+    echo ""
+    echo "  $_section: $_label"
+    echo "  $_instr"
+    pause "Press ENTER when you're ready to do it > "
+    echo "  Go - do it now..."
+    showkey --keycodes -t 6 >>"$LOG" 2>&1
+    echo "  Captured."
+    pause "Press ENTER to continue > "
+}
+
+both "zkeyfix: appending to $LOG"
+both "Two items to redo/add. Nothing runs on a timer - every step waits for ENTER."
+pause "Press ENTER to begin > "
+
+both ""
+both "1/2 - Redo SHIFT %"
+cap "SHIFT" "%" "Hold SHIFT + the key that produces  %  (do it carefully, once)"
+
+both ""
+both "2/2 - Missing key: Fn + W"
+cap "FUNCTION" "^" "Press Fn + W  (the key that produces  ^  caret)"
+
+restore
+both ""
+both "Done. Appended to:"
+both "   $LOG"
+both "(also /root/zkeymap-latest.log)"
+both ""
+both "Copy that off the card when you are done."

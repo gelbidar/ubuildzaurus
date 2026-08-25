@@ -1,0 +1,15 @@
+config BR2_PACKAGE_LIBGPEPIMC
+	bool "libgpepimc"
+	depends on BR2_PACKAGE_LIBGTK2
+	select BR2_PACKAGE_LIBGPEWIDGET
+	select BR2_PACKAGE_SQLITE2
+	help
+	  Shared "PIM categories" library for the GPE Palmtop Environment:
+	  the category table in the shared sqlite database plus the category
+	  selection/edit dialogs the PIM apps embed.
+
+	  Required by libtododb, and therefore by gpe-todo.
+
+	  Note this links SQLite *2* (see the sqlite2 package), not SQLite 3.
+
+	  http://gpe.linuxtogo.org/ (defunct; sourced from the Debian archive)

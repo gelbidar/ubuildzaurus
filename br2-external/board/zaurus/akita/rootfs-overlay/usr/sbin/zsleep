@@ -1,0 +1,23 @@
+#!/bin/sh
+# suspend. backlight stays lit otherwise so drop brightness first
+# never touch fb blank, it drives panel power and broke the display
+set -e
+
+# First backlight device, if any (e.g. /sys/class/backlight/corgi-bl/brightness).
+BL=
+for b in /sys/class/backlight/*/brightness; do
+	[ -e "$b" ] && { BL="$b"; break; }
+done
+
+SAVE=
+if [ -n "$BL" ] && [ -r "$BL" ]; then
+	SAVE=$(cat "$BL" 2>/dev/null || true)
+fi
+
+sync
+[ -n "$BL" ] && [ -w "$BL" ] && echo 0 > "$BL" 2>/dev/null || true
+
+echo mem > /sys/power/state      # sleeps here; returns on wake
+
+# --- resume: restore the backlight we dimmed ---
+[ -n "$BL" ] && [ -n "$SAVE" ] && [ -w "$BL" ] && echo "$SAVE" > "$BL" 2>/dev/null || true

@@ -1,0 +1,21 @@
+#!/bin/sh
+# display/suspend diag. did lcd, backlight and the max7310 bind
+
+echo "== /sys/power/state (should list 'mem') =="
+cat /sys/power/state 2>/dev/null
+
+echo "== backlight class (expect a corgi/generic entry) =="
+ls -1 /sys/class/backlight/ 2>/dev/null || echo "  (none -> corgi_bl did not bind)"
+
+echo "== lcd class (expect corgi_lcd) =="
+ls -1 /sys/class/lcd/ 2>/dev/null || echo "  (none -> corgi_lcd did not bind)"
+
+echo "== gpiochips (Akita w/ ioexp has an EXTRA ~8-line chip past the PXA GPIOs) =="
+cat /sys/kernel/debug/gpio 2>/dev/null || ls -1 /sys/class/gpio/ 2>/dev/null
+
+echo "== framebuffer =="
+ls -1 /sys/class/graphics/ 2>/dev/null
+
+echo "== relevant dmesg =="
+dmesg 2>/dev/null | grep -iE 'pca953x|max7310|corgi|sharpsl|ioexp|backlight|pxafb|i2c-pxa|suspend|resume' \
+  || echo "  (kernel log rotated / empty)"

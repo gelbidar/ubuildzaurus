@@ -1,0 +1,11 @@
+# Buildroot checkout + build output (large, reproducible from build.sh)
+/buildroot/
+# Downloaded kernel package + any other cached downloads
+/dl-cache/
+# Working notes, not part of the project
+/handoff.md
+# Third-party reference material, kept locally. Not ours to redistribute,
+# and the build doesn't use any of it.
+/SL-C1000-CACKO-1.23-1029311005/
+/rodent-icon-theme-5.0/
+/kexecboot_updater/

@@ -1,0 +1,3 @@
+# Locally calculated (upstream gpe.linuxtogo.org is gone; this is Debian's
+# pristine upstream tarball).
+sha256  3f68ed00b26d88b96a520c03b896413ac5271caf7da7863f8a5897c6229673a6  gpe-todo_0.58.orig.tar.gz

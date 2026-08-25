@@ -1,0 +1,119 @@
+# akita. everything lives here, never run menuconfig
+# pxa270, armv5te, no vfp so soft float
+
+# arch
+BR2_arm=y
+BR2_xscale=y
+BR2_ARM_EABI=y
+
+# glibc, not musl. musl binds eagerly and xorg modules need lazy.
+# AS_KERNEL with a custom version misresolves the headers check to 2.6
+BR2_TOOLCHAIN_BUILDROOT_GLIBC=y
+BR2_KERNEL_HEADERS_5_4=y
+# xorg needs c++
+BR2_TOOLCHAIN_BUILDROOT_CXX=y
+# partial, not full. -z now breaks lazy binding same as musl did
+BR2_RELRO_PARTIAL=y
+
+# 5.4.229 + greguu's config, plus GPIO_PCA953X=y so the max7310 registers
+# and corgi_lcd can re-power the panel on resume. fixes fade to white
+BR2_LINUX_KERNEL=y
+BR2_LINUX_KERNEL_CUSTOM_VERSION=y
+BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="5.4.229"
+BR2_LINUX_KERNEL_USE_CUSTOM_CONFIG=y
+BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_ZAURUS_PATH)/board/zaurus/akita/linux.config"
+BR2_LINUX_KERNEL_ZIMAGE=y
+# both fix the pxa asoc pcm path double-closing and trashing the slab
+BR2_LINUX_KERNEL_PATCH="$(BR2_EXTERNAL_ZAURUS_PATH)/board/zaurus/akita/linux-patches"
+
+# --- System / init ---
+BR2_TARGET_GENERIC_HOSTNAME="zaurus"
+BR2_TARGET_GENERIC_ISSUE="Zaurus OS (SL-C1000 Akita)"
+BR2_TARGET_GENERIC_ROOT_PASSWD="zaurus"
+BR2_ROOTFS_DEVICE_CREATION_DYNAMIC_EUDEV=y
+# login on the fb console
+BR2_TARGET_GENERIC_GETTY_PORT="tty1"
+# northamerica only, no point shipping every zone
+# rendering only, no RTC so the clock doesn't survive a reboot. see zclock
+BR2_TARGET_TZ_INFO=y
+BR2_TARGET_TZ_ZONELIST="northamerica"
+BR2_TARGET_LOCALTIME="America/Detroit"
+
+# overlay + post-build + post-image
+BR2_ROOTFS_OVERLAY="$(BR2_EXTERNAL_ZAURUS_PATH)/board/zaurus/akita/rootfs-overlay"
+BR2_ROOTFS_POST_BUILD_SCRIPT="$(BR2_EXTERNAL_ZAURUS_PATH)/board/zaurus/akita/post-build.sh"
+BR2_ROOTFS_POST_IMAGE_SCRIPT="$(BR2_EXTERNAL_ZAURUS_PATH)/board/zaurus/akita/post-image.sh"
+BR2_PACKAGE_HOST_GENIMAGE=y
+
+# module tooling, keymap capture, fs tools
+BR2_PACKAGE_KMOD=y
+BR2_PACKAGE_KMOD_TOOLS=y
+BR2_PACKAGE_EVTEST=y
+BR2_PACKAGE_KBD=y
+BR2_PACKAGE_E2FSPROGS=y
+
+# bash for root. SHOW_OTHERS so we can pick tools busybox also has
+BR2_PACKAGE_BUSYBOX_SHOW_OTHERS=y
+BR2_PACKAGE_BASH=y
+
+# xfbdev backported into 21.1. modern xorg dropped kdrive and full xorg
+# won't allocate a screen on this panel. draws straight to fb0
+# see the xserver .mk POST_PATCH hook + board/.../xfbdev
+BR2_PACKAGE_XORG7=y
+BR2_PACKAGE_XSERVER_XORG_SERVER=y
+BR2_PACKAGE_XSERVER_XORG_SERVER_KDRIVE=y
+BR2_PACKAGE_XAPP_XINIT=y
+# loads symbols/akita from .xinitrc
+BR2_PACKAGE_XAPP_SETXKBMAP=y
+# .Xresources once per session, so every xterm gets it not just one
+BR2_PACKAGE_XAPP_XRDB=y
+# ads7846 touch, linked into the backported kdrive tslib driver
+# needs /etc/pointercal, run zcal
+BR2_PACKAGE_TSLIB=y
+BR2_PACKAGE_XTERM=y
+# alsa/asoc is in the kernel, see S09load-modules for why not modular
+# mpg123 not xmms, xmms would need a whole gtk1 stack for a gui. gqmpeg
+# gives mpg123 one anyway
+BR2_PACKAGE_ALSA_LIB=y
+BR2_PACKAGE_MPG123=y
+# gtk2 frontend for mpg123, needs libgtk2 below
+BR2_PACKAGE_GQMPEG=y
+# gtk2. everything else cascades in via libgtk2's selects
+# lxterminal + legacy-vte worked on this too but got dropped, xterm is fine
+BR2_PACKAGE_LIBGTK2=y
+BR2_PACKAGE_MATCHBOX=y
+# launcher on the root window, else closing the last app strands you
+# matchbox-common has the vfolder menus. PDA folders suit the panel
+BR2_PACKAGE_MATCHBOX_DESKTOP=y
+BR2_PACKAGE_MATCHBOX_COMMON=y
+BR2_PACKAGE_MATCHBOX_COMMON_PDA=y
+# panel
+BR2_PACKAGE_MATCHBOX_PANEL=y
+# gpe apps. libgpewidget/gpe-icons/libgpepimc/libtododb/sqlite2 cascade in
+# no gpe-filemanager, it's wired to gnomevfs and porting to gio is a rewrite
+BR2_PACKAGE_GPE_EDIT=y
+BR2_PACKAGE_GPE_TODO=y
+BR2_PACKAGE_GPE_SKETCHBOOK=y
+# libpng turns on matchbox's png loader, else it's xpm only and the rodent
+# icons won't load. dirclean matchbox-lib after changing this
+# dejavu is scalable so xft text isn't stuck at the bitmap size, which is
+# what makes zbig work. sans + mono only, serif/condensed save ~1MB
+BR2_PACKAGE_LIBPNG=y
+BR2_PACKAGE_DEJAVU=y
+# BR2_PACKAGE_DEJAVU_SERIF is not set
+# BR2_PACKAGE_DEJAVU_SANS_CONDENSED is not set
+# BR2_PACKAGE_DEJAVU_SERIF_CONDENSED is not set
+# enough for the server to start and xterm to find "fixed" 
+BR2_PACKAGE_XFONT_FONT_UTIL=y
+BR2_PACKAGE_XFONT_ENCODINGS=y
+BR2_PACKAGE_XFONT_FONT_ALIAS=y
+BR2_PACKAGE_XFONT_FONT_MISC_MISC=y
+BR2_PACKAGE_XFONT_FONT_CURSOR_MISC=y
+
+# ext3, kexecboot's kernel is ext2/3 only
+# tar.gz for populating a partition you formatted yourself
+BR2_TARGET_ROOTFS_EXT2=y
+BR2_TARGET_ROOTFS_EXT2_3=y
+BR2_TARGET_ROOTFS_EXT2_SIZE="512M"
+BR2_TARGET_ROOTFS_TAR=y
+BR2_TARGET_ROOTFS_TAR_GZIP=y

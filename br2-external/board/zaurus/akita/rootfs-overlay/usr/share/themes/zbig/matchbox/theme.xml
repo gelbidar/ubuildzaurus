@@ -1,0 +1,291 @@
+<?xml version="1.0"?>
+<theme name="zbig" author="Matthew Allum - mallum@handhelds.org"
+       desc="" version="1.0" engine_version="1" >
+
+<color id="white" def="#ffffff" />
+<color id="black" def="#000000" />
+
+<color id="borderdark" def="#acaaa5" />
+<color id="borderlight" def="#fcfaf5" />
+<color id="bordermid" def="#bcbab5" />
+
+<color id="grad1" def="#dadad5" />
+<color id="grad2" def="#dadad5" />
+<color id="grad3" def="#dadad5" />
+
+<color id="menuborder" def="#acaaa5" />
+<color id="menubg" def="#dadad5" />
+<color id="menutext" def="#000000C8" />
+
+<!-- below is menu highlight and highlighted titlebar color -->
+<color id="menuhl" def="#486880" />
+
+<color id="trans" def="#ffffff00" />
+<color id="textcol" def="#ffffff" />
+
+<color id="shadowcol"   def="#11111166" />
+
+<font id="titlefont" def="Sans bold 24px" />
+<font id="menufont" def="Sans bold 24px" />
+
+<pixmap id="closebutton" filename="closebutton.xpm" />  
+<pixmap id="menubutton"  filename="menubutton.xpm" />  
+
+<frame id="main" height="30">
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="borderdark" />
+
+  <layer x="2" y="2" w="100%-3"  h="2" 
+   type="plain" color="borderlight" />
+
+  <layer x="2" y="3" w="100%-3"  h="20" 
+   type="gradient-vert" startcol="grad1" endcol="grad2"/>
+
+  <layer x="2" y="3" w="100%-3"  h="26" 
+   type="plain" color="grad3"/>
+
+  <layer x="33" y="4" w="100%-66"  h="21" 
+   type="plain" color="menuhl"/>
+
+  <layer x="33" y="4" w="2"  h="2" type="plain" color="grad3"/>
+  <layer x="33" y="24" w="2"  h="2" type="plain" color="grad3"/>
+  <layer x="100%-34" y="4" w="2"  h="2" type="plain" color="grad3"/>
+  <layer x="100%-34" y="24" w="2"  h="2" type="plain" color="grad3"/>
+
+  <layer x="2" y="28" w="3"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="100%-4" y="28" w="3"  h="2" 
+   type="plain" color="grad3" />
+
+  <!-- <layer x="9" y="3" w="24"  h="24" type="icon" />-->
+
+  <layer x="39" y="4" w="100%-90" h="30" 
+   type="label" color="textcol" justify="left" font="titlefont" />
+
+
+  <button x="100%-30" y="0" w="24" h="30" action="close" >
+   <active pixmap="closebutton" blend="-150"/>
+   <inactive pixmap="closebutton" />
+  </button>
+
+  <button x="6" y="0" w="24" h="30" action="menu" >
+   <active pixmap="menubutton" blend="-150"/>
+   <inactive pixmap="menubutton" />
+  </button>
+
+  <button x="labelx" y="0" w="labelw" h="30" 
+   action="menu" options="inputonly" /> -
+
+</frame>
+
+<frame id="main-east" width="6" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="bordermid" />
+
+  <layer x="2" y="0" w="3"  h="100%" 
+   type="plain" color="grad3" />
+
+</frame>
+
+<frame id="main-west"  width="6" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="bordermid" />
+
+  <layer x="2" y="0" w="3"  h="100%" 
+   type="plain" color="grad3" />
+
+</frame>
+
+<frame id="main-south" height="6" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="bordermid" />
+
+  <layer x="2" y="2" w="100%-3"  h="100%-3" 
+   type="plain" color="grad3" />
+
+  <layer x="2" y="0" w="3"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="100%-4" y="0" w="3"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="4" y="2" w="100%-9"  h="2" 
+   type="plain" color="borderlight" />
+
+</frame>
+
+<frame id="dialog" height="30" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="borderdark" />
+
+  <layer x="2" y="2" w="100%-3"  h="2" 
+   type="plain" color="borderlight" />
+
+  <layer x="2" y="3" w="100%-3"  h="20" 
+   type="gradient-vert" startcol="grad1" endcol="grad2"/>
+
+  <layer x="2" y="22" w="100%-3"  h="6" 
+   type="gradient-vert" startcol="grad2" endcol="grad3"/>
+
+  <layer x="2" y="2" w="2"  h="100%-2" 
+   type="gradient-vert" startcol="borderlight" endcol="grad3"/>
+
+  <layer x="100%-3" y="2" w="2"  h="100%-2" 
+   type="gradient-vert" startcol="borderlight" endcol="grad3"/>
+
+  <layer x="3" y="28" w="2"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="100%-4" y="28" w="2"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="8" y="4" w="100%-90" h="30" 
+   type="label" color="black" justify="left" font="titlefont" />
+
+  <button x="-30" y="0" w="24" h="30" action="close" >
+   <active pixmap="closebutton" blend="-150"/>
+   <inactive pixmap="closebutton" />
+  </button>
+
+</frame>
+
+
+<frame id="dialog-north" height="6">
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="borderdark" />
+
+  <layer x="2" y="2" w="100%-3"  h="2" 
+   type="plain" color="borderlight" />
+
+  <layer x="2" y="3" w="100%-3"  h="3" 
+   type="plain" color="grad3"/>
+
+  <layer x="2" y="2" w="2"  h="100%-2" 
+   type="gradient-vert" startcol="borderlight" endcol="grad3"/>
+
+  <layer x="100%-3" y="2" w="2"  h="100%-2" 
+   type="gradient-vert" startcol="borderlight" endcol="grad3"/>
+
+  <layer x="3" y="28" w="2"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="100%-4" y="28" w="2"  h="2" 
+   type="plain" color="grad3" />
+  
+</frame>
+
+<frame id="dialog-east" width="6" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="bordermid" />
+
+  <layer x="2" y="0" w="3"  h="100%" 
+   type="plain" color="grad3" />
+
+</frame>
+
+<frame id="dialog-west" width="6" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="bordermid" />
+
+  <layer x="2" y="0" w="3"  h="100%" 
+   type="plain" color="grad3" />
+
+</frame>
+
+<frame id="dialog-south" height="6" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="bordermid" />
+
+  <layer x="2" y="2" w="100%-3"  h="100%-3" 
+   type="plain" color="grad3" />
+
+  <layer x="2" y="0" w="3"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="100%-4" y="0" w="3"  h="2" 
+   type="plain" color="grad3" />
+
+  <layer x="4" y="2" w="100%-9"  h="2" 
+   type="plain" color="borderlight" />
+
+</frame>
+
+<!-- below frames are likely not needed, legacy stuff -->
+
+<frame id="utility-max" width="30">
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="borderdark" />
+
+  <layer x="2" y="2" w="100%-3"  h="2" 
+   type="plain" color="borderlight" />
+
+  <layer x="2" y="3" w="100%-3"  h="100%-3" 
+   type="gradient-vert" startcol="grad1" endcol="grad2"/>
+
+  <button x="0" y="0" w="100%" h="100%" action="minimize" options="inputonly"/>
+
+</frame>
+
+<frame id="utility-min" height="30">
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="borderdark" />
+
+  <layer x="2" y="2" w="100%-3"  h="2" 
+   type="plain" color="borderlight" />
+
+  <layer x="2" y="3" w="100%-3"  h="100%-3" 
+   type="gradient-vert" startcol="grad1" endcol="grad2"/>
+
+  <layer x="8" y="4" w="100%-90" h="30" 
+   type="label" color="black" justify="left" font="titlefont" />
+
+  <button x="0" y="0" w="100%-30" h="100%" 
+  action="maximize" options="inputonly"/>
+
+  <button x="-30" y="0" w="24" h="30" action="close" >
+   <active pixmap="closebutton" blend="-150"/>
+   <inactive pixmap="closebutton" />
+  </button>
+
+</frame>
+
+
+<frame id="menu" 
+        border_north="3" 
+	border_south="4" 
+	border_west="3" 
+        border_east="3"
+        font="menufont" 
+	highlight="menuhl"
+        color="black" 
+	options="shaped" >
+
+  <layer x="0" y="0" w="100%"  h="100%" 
+   type="plain" color="menuborder" />
+
+  <layer x="2" y="0" w="100%-3"  h="100%-2" 
+   type="plain" color="menubg" />
+
+  <layer x="0" y="-2" w="2"  h="2" 
+   type="plain" color="trans" />
+
+  <layer x="-2" y="-2" w="2"  h="2" 
+   type="plain" color="trans" />
+
+</frame>
+
+<shadow style="simple" dx="3" dy="3" color="shadowcol"/>
+
+</theme>

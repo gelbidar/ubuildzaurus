@@ -1,0 +1,18 @@
+config BR2_PACKAGE_GPE_SKETCHBOOK
+	bool "gpe-sketchbook"
+	depends on BR2_PACKAGE_LIBGTK2
+	select BR2_PACKAGE_LIBGPEWIDGET
+	select BR2_PACKAGE_SQLITE2
+	# gdk-pixbuf comes in with libgtk2
+	help
+	  GPE Sketchbook - a stylus-oriented freehand drawing pad. Sketches
+	  are kept in a sqlite-indexed notebook (~/.gpe/sketchbook) with a
+	  thumbnail selector, and saved as PNG.
+
+	  Probably the most obviously touchscreen-native app in GPE, and the
+	  one the Zaurus' stylus is actually good at.
+
+	  Note this links SQLite *2* (see the sqlite2 package), not SQLite 3.
+
+	  http://gpe.linuxtogo.org/ (defunct; recovered from the Internet
+	  Archive's copy of the upstream download directory)

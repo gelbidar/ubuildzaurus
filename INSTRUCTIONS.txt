@@ -1,0 +1,386 @@
+UBuildZaurus - detailed instructions
+====================================
+
+The README covers the short version. This is everything else.
+
+
+1. HOST REQUIREMENTS
+--------------------
+
+Any reasonably current Linux box. You need the normal build tools:
+
+    gcc  g++  make  git  wget  rsync  cpio  unzip  perl  file  python3
+    bzip2  bc
+
+build.sh checks for all of these before it starts and names whichever one
+is missing.
+
+Nothing in the build needs root, so don't run it as root.
+
+You'll want around 10 GB free. The Buildroot clone is about 200 MB,
+downloaded tarballs about 650 MB, and the build output takes several GB
+while it works.
+
+The first run is dominated by the cross toolchain, so expect 30-60 minutes
+depending on the machine. After that a rebuild is usually a minute or two
+unless you touched the kernel.
+
+
+2. WHAT build.sh DOES
+---------------------
+
+    ./build.sh            full build
+    ./build.sh config     apply the defconfig and stop
+    ./build.sh clean      delete the build output, keep downloads
+
+In order:
+
+  1. checks host tools
+  2. clones Buildroot (branch 2025.02.x, pinned) into buildroot/ if it isn't
+     there already
+  3. applies br2-external/configs/zaurus_akita_defconfig
+  4. builds everything
+
+Running it again reuses the existing clone and downloads, so there's no
+cost to just running it whenever.
+
+The Buildroot version is pinned deliberately. 2024.02 ships a host tar that
+won't build against a modern libacl, and newer branches have dropped the
+5.4 kernel headers this target needs.
+
+"./build.sh config" checks that a defconfig edit parses without waiting for
+a full build.
+
+"./build.sh clean" wipes buildroot/output but leaves dl-cache alone, so a
+rebuild after it won't re-download anything. It does force a full toolchain
+rebuild, so it's rarely the one you want.
+
+
+3. WHAT YOU GET
+---------------
+
+Everything lands in buildroot/output/images/:
+
+    sdcard.img       the whole SD card image, this is the one you flash
+    rootfs.ext2      just the filesystem (it is ext3, the name is a
+                     Buildroot convention)
+    rootfs.tar.gz    the same filesystem as a tarball
+    zImage           the kernel
+
+sdcard.img is an MBR disk with a single ext3 partition. The kernel and its
+boot config live inside that partition at /boot/zImage and /boot/boot.cfg,
+which is where kexecboot looks for them. There is no separate boot
+partition.
+
+The filesystem is a fixed 512 MB regardless of your card size, and about
+130 MB of that is actually used. To change it, edit
+BR2_TARGET_ROOTFS_EXT2_SIZE in the defconfig.
+
+
+4. FLASHING
+-----------
+
+    sudo dd if=buildroot/output/images/sdcard.img of=/dev/sdX bs=4M \
+        conv=fsync status=progress
+
+Replace /dev/sdX with your card, and check the name with lsblk first. It's
+the whole device (/dev/sdb), not a partition (/dev/sdb1).
+
+If you'd rather populate a card you partitioned yourself, format it ext3
+and untar rootfs.tar.gz onto it instead. Make sure /boot/zImage and
+/boot/boot.cfg end up on it.
+
+Flashing wipes /etc/pointercal, so the touchscreen needs recalibrating
+every time. That's what zcal is for.
+
+
+5. FIRST BOOT
+-------------
+
+The device boots into a text console and logs in automatically.
+
+    zcal      calibrate the touchscreen. Run this from the text console,
+              not from inside X. Tap the crosshairs.
+    zx        start X. Use this instead of startx.
+
+zx exists because the framebuffer console has to be unbound from /dev/fb0
+before X starts. Otherwise the console keeps drawing over X, and coming
+back from suspend leaves you stuck at a shell. zx handles that and rebinds
+it on exit.
+
+There's no RTC on this hardware, so the clock starts at 1970 on every boot.
+Run zclock to set it.
+
+Every on-device command is named with letters only. A freshly flashed image
+can't type most symbols until the keymap loads, so anything you might need
+early has to be typeable without them.
+
+
+5.1 THE z* COMMANDS
+-------------------
+
+These live in /usr/sbin and are part of this project rather than Buildroot.
+
+Daily use
+
+    zx              start X. Unbinds the framebuffer console first. Use
+                    this rather than startx.
+    zcal            calibrate the touchscreen, writes /etc/pointercal.
+                    Run it from the text console, not from inside X.
+                    Needed after every flash.
+    zcf             mount a CF card at /mnt/cf. "zcf umount" unmounts.
+                    Prints what it can see about the socket if it fails.
+    zclock          set the system clock, one number at a time. There's no
+                    RTC, so the clock starts at 1970 every boot. The hour
+                    takes 0-23; enter 1-12 and it asks am/pm, anything
+                    else is taken as 24 hour.
+    zsleep          suspend to RAM. Drops the backlight first and restores
+                    it on wake.
+    zpwrd           the power button daemon. Starts at boot rather than
+                    being run by hand. Watches for the power button and
+                    calls zsleep, so the backlight actually goes off.
+    zpkgman         ncurses menu for removing software you don't want.
+                    Ships on the prebuilt images. Scroll the list, pick
+                    what to drop, and it's gone.
+
+                    It only removes. There's no binary package manager
+                    here and nothing to install from, so anything you take
+                    out comes back by building an image with it enabled
+                    rather than by reinstalling. Decide what goes in at
+                    build time (section 6.1), and use zpkgman to trim an
+                    image you were handed.
+
+Touchscreen tuning
+
+    zrot N          touch orientation, N = 1..8. 1-4 are the landscape
+                    (swapped axis) options, 5-8 portrait. Restart X to
+                    apply. No recalibration needed.
+    ztune N         switch the touch filter preset. Run with no argument
+                    to list them. Preset 5 is the default.
+    ztest           try the current filter on the framebuffer without
+                    starting X. Ctrl-C quits.
+
+Keyboard
+
+    zkbd            reload the console keymap by hand. It loads at boot
+                    anyway, so this is mostly for checking it took.
+    zkeymap         walk the whole keyboard one key at a time and log the
+                    real kernel keycodes via showkey. Both the console
+                    keymap and the X layout are built from this. Run it
+                    from the text console. Every step waits for ENTER.
+                    Writes /root/zkeymap-<timestamp>.log.
+    zkeyfix         redo individual captures without repeating the whole
+                    zkeymap walk. Appends to the same log.
+
+Diagnostics
+
+    zdiag-display   dump the framebuffer, backlight, LCD and GPIO state
+                    plus the relevant dmesg lines. The first thing to run
+                    if the display or suspend misbehaves.
+    zmtd            NAND partition layout and the kernel command line.
+                    Read-only, it never writes to flash.
+    xlog            run the X server capturing output to /tmp/xo, then
+                    print any errors. For when X won't start.
+    zxfont N        open a throwaway xterm at DejaVu Sans Mono size N, to
+                    try sizes on the real screen.
+
+
+6. CHANGING WHAT'S IN THE IMAGE
+-------------------------------
+
+6.1 Packages
+
+Edit br2-external/configs/zaurus_akita_defconfig. It's a flat list of
+Buildroot options. To add a package, add its symbol:
+
+    BR2_PACKAGE_NANO=y
+
+To remove one, delete the line, or comment it out in Buildroot's style:
+
+    # BR2_PACKAGE_XTERM is not set
+
+Dependencies resolve themselves. Enabling libgtk2 brings in glib2, pango,
+cairo, gdk-pixbuf and the rest without you listing them.
+
+If you don't know a package's symbol, look in buildroot/package/<name>/
+Config.in, or search:
+
+    grep -r "bool \"nano\"" buildroot/package/
+
+Then ./build.sh.
+
+6.2 Files on the rootfs
+
+Anything under board/zaurus/akita/rootfs-overlay/ is copied onto the
+filesystem, keeping its path:
+
+    rootfs-overlay/usr/bin/hello        ->  /usr/bin/hello
+    rootfs-overlay/etc/motd             ->  /etc/motd
+    rootfs-overlay/root/.bashrc         ->  /root/.bashrc
+
+The overlay is applied after every package installs, so it takes priority.
+That makes it the place to override a file some package shipped.
+
+Keep the executable bit set on scripts, it's preserved.
+
+Two paths to avoid: /run and /tmp are emptied just before the image is
+built, so anything you put there won't survive.
+
+6.3 Kernel options
+
+Edit board/zaurus/akita/linux.config. It's a normal kernel .config.
+
+Changing it triggers a kernel rebuild automatically, which takes a few
+minutes.
+
+6.4 Kernel patches
+
+Drop a unified diff into board/zaurus/akita/linux-patches/. They apply in
+filename order, so name them 0001-, 0002- and so on.
+
+Patches only apply when the kernel source is extracted. If the tree is
+already there, adding a patch does nothing until you force a re-extract:
+
+    make -C buildroot BR2_EXTERNAL=$PWD/br2-external linux-dirclean
+    ./build.sh
+
+See section 7.
+
+6.5 Packaging something Buildroot doesn't have
+
+Make a directory under br2-external/package/<name>/ containing a Config.in
+and a <name>.mk, then add a line to br2-external/Config.in:
+
+    source "$BR2_EXTERNAL_ZAURUS_PATH/package/<name>/Config.in"
+
+The nine packages already there are a good starting point. Between them
+they cover a normal autotools package (gpe-edit), one with no autotools at
+all (gpe-sketchbook), a pure data package (gpe-icons), and one that
+actively resists cross-compiling (sqlite2).
+
+A few things that help:
+
+  - do a standalone cross-compile first, outside Buildroot, before writing
+    the .mk. Iterating is much quicker that way.
+  - prefer a real release tarball over a git snapshot. Tarballs ship a
+    working ./configure, while snapshots usually need AUTORECONF=YES, which
+    old packages often don't survive.
+  - qemu-arm-static runs the target binary on your build machine:
+
+        qemu-arm-static -L buildroot/output/target \
+            buildroot/output/target/usr/bin/whatever
+
+    It catches crashes before you flash anything. It can't show you
+    anything on screen, but it will find an abort during startup.
+
+6.6 A different Zaurus model
+
+Copy board/zaurus/akita/ to board/zaurus/<model>/ and copy the defconfig
+alongside the existing one, pointing its paths at the new directory.
+
+The board directory is self-contained, so the X server, the packages and
+most of the overlay carry straight over. What changes is the kernel config
+and the model-specific parts of the overlay, mainly the keymaps.
+
+For the keyboard, run zkeymap on the device. It walks every physical key
+one at a time and logs the real kernel keycodes, which is what both the
+console keymap and the X layout are built from. It's time consuming but
+it works. zkeyfix redoes individual keys without repeating the whole walk.
+
+
+7. REBUILD BEHAVIOR
+--------------------
+
+Buildroot doesn't track files in br2-external as build dependencies, so
+some edits are picked up automatically and some aren't.
+
+Picked up by a plain ./build.sh:
+
+    the rootfs overlay
+    the defconfig
+    linux.config
+
+Not picked up. These will just ship the old binary:
+
+    xfbdev/ sources
+    kernel patches
+    edits to vendored packages inside buildroot/
+
+For those, force the package to start over:
+
+    make -C buildroot BR2_EXTERNAL=$PWD/br2-external <pkg>-dirclean
+    ./build.sh
+
+The ones you'll need:
+
+    linux-dirclean                    kernel patches
+    xserver_xorg-server-dirclean      Xfbdev sources
+    gqmpeg-dirclean                   gqmpeg patches
+    matchbox-lib-dirclean             after turning libpng on or off
+
+Use dirclean rather than rebuild. dirclean deletes the source tree so
+patches and post-extract hooks run again, while rebuild just recompiles
+what's already there.
+
+One related case: deleting a file from the overlay doesn't remove it from
+buildroot/output/target, since that tree is built up incrementally. It'll
+still be in your image. Delete it from output/target by hand, or do a clean
+build.
+
+
+8. DOWNLOADS
+------------
+
+Tarballs are cached in dl-cache/br-sources/, one directory per package, and
+survive ./build.sh clean.
+
+A lot of the packages here have dead upstreams, so the cache matters. If a
+download fails, try in order:
+
+    https://zarchive.org/
+    https://sources.buildroot.net/<pkg>/<file>
+    https://archive.debian.org/
+    the Wayback Machine
+
+Drop what you find into dl-cache/br-sources/<pkg>/ and build again.
+Buildroot checks it against the .hash file, so a wrong or truncated file
+gets rejected rather than quietly used.
+
+
+9. WHEN SOMETHING BREAKS
+------------------------
+
+Build fails in a package
+    Buildroot prints the failing command. The build directory
+    (buildroot/output/build/<pkg>-<version>/) is left in place, so you can
+    go in and run the command by hand.
+
+Change didn't take effect
+    See section 7.
+
+Binary crashes on the device
+    Run it under qemu-arm-static on the build machine (section 6.5).
+
+X won't start
+    xlog runs the server and captures its output to /tmp/xo.
+
+Display or suspend looks wrong
+    zdiag-display dumps the framebuffer, backlight, LCD and GPIO state,
+    plus the relevant dmesg lines.
+
+
+10. DECISIONS THAT MIGHT LOOK ODD
+---------------------------------
+
+  - glibc instead of musl. musl symbol binding broke the way
+    Xorg loads its modules.
+  - RELRO is partial rather than full, for the same reason.
+  - The X server is a kdrive Xfbdev I backported out of xorg-server 1.18.4
+    into 21.1. Modern Xorg dropped it, and full Xorg won't allocate a
+    screen on a panel with no DRM.
+  - RandR is switched off. The rotation here is static, and GTK misreads
+    the rotated geometry over RandR, which breaks touch across half the
+    screen.
+  - The sound stack is built into the kernel rather than modular. As
+    modules the codec never loaded in time.
+  - There's no RTC driver enabled, so zclock sets the time by hand instead.

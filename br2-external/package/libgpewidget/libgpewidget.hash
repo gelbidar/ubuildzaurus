@@ -1,0 +1,4 @@
+# Locally calculated (upstream gpe.linuxtogo.org is gone; this is Debian's
+# pristine upstream tarball).
+sha256  f96d30c09b0395ea4e146730fd52d9ea303b619bb139051d9f12d3f868a9e18c  libgpewidget_0.117.orig.tar.bz2
+sha256  5bbcbb737e60fe9deba08ecbd00920cfcc3403ba2e534c64fdeea49d6bb87509  COPYING.LIB

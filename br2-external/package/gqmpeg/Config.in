@@ -1,0 +1,20 @@
+config BR2_PACKAGE_GQMPEG
+	bool "gqmpeg"
+	depends on BR2_PACKAGE_LIBGTK2
+	select BR2_PACKAGE_MPG123
+	select BR2_PACKAGE_LIBPNG
+	help
+	  GQmpeg 0.91.1 - a GTK2 graphical frontend/skinnable player that
+	  spawns and remote-controls the mpg123 binary for actual decode
+	  (confirmed: no libmpg123 linkage, just execvp("mpg123", ...) at
+	  runtime - genuinely just a GUI wrapper, matches how it's used
+	  here). Also has io_ modules for ogg123/xmp/internet radio if
+	  those player binaries happen to be present, but mpg123 is the
+	  only one this project actually installs.
+
+	  Real 2004 release, GTK+ 2.2.0+ (we have 2.24.33) - no GTK1/GTK3
+	  toolkit needed. Needed 3 small cross-compile fixes (see the two
+	  0*.patch files here) verified by an actual standalone
+	  cross-compile through to a linked ARM binary before packaging.
+
+	  https://gqmpeg.sourceforge.net/

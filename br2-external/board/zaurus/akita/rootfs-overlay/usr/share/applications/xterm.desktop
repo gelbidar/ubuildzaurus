@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Terminal
+Comment=X terminal
+Exec=xterm
+Terminal=false
+Type=Application
+Icon=terminal
+Categories=Utility;System;

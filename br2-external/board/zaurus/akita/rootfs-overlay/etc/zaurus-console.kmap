@@ -1,0 +1,59 @@
+# akita console keymap. loadkeys merges over the default US map so only
+# the planes that differ are here. keycodes literal, no +8 like X
+# same capture as symbols/akita, keep the two in sync
+#
+# quirks
+# fn is the third level shift (AltGr)
+# number row shift plane isn't stock US, 2/6/7/8/9/0 all off
+# fn legends with no console keysym are VoidSymbol
+
+# Fn = AltGr
+keycode  61 = AltGr
+
+# Number row, Fn legends
+altgr keycode   2 = VoidSymbol
+altgr keycode   3 = VoidSymbol
+altgr keycode   4 = VoidSymbol
+altgr keycode   5 = VoidSymbol
+
+# Number row, shift plane
+shift keycode   3 = quotedbl
+shift keycode   7 = ampersand
+shift keycode   8 = apostrophe
+shift keycode   9 = parenleft
+shift keycode  10 = parenright
+shift keycode  11 = asciitilde
+
+# Backspace / Tab
+altgr keycode  14 = Delete
+altgr keycode  15 = Caps_Lock
+
+# QWERTY row
+altgr keycode  17 = asciicircum
+altgr keycode  18 = equal
+altgr keycode  19 = plus
+altgr keycode  20 = bracketleft
+altgr keycode  21 = bracketright
+altgr keycode  22 = braceleft
+altgr keycode  23 = braceright
+
+# Home row
+altgr keycode  32 = grave
+altgr keycode  33 = backslash
+altgr keycode  34 = semicolon
+altgr keycode  35 = colon
+altgr keycode  36 = asterisk
+altgr keycode  38 = bar
+
+# Bottom row
+altgr keycode  45 = VoidSymbol
+altgr keycode  46 = VoidSymbol
+altgr keycode  47 = VoidSymbol
+altgr keycode  48 = underscore
+altgr keycode  12 = at
+altgr keycode  51 = less
+altgr keycode  52 = greater
+
+# the slash fix
+shift keycode  51 = slash
+shift keycode  52 = question

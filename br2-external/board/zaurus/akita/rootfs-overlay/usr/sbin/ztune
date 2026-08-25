@@ -1,0 +1,19 @@
+#!/bin/sh
+# ztune N. touch filter preset, then ztest to feel it
+# calibration is separate so no zcal needed
+N="$1"
+SRC="/etc/ts-presets/$N.conf"
+if [ -z "$N" ] || [ ! -f "$SRC" ]; then
+	echo "usage: ztune N"
+	echo "presets:"
+	for f in /etc/ts-presets/*.conf; do
+		n=$(basename "$f" .conf)
+		echo "  $n - $(head -1 "$f" | sed 's/^# *//')"
+	done
+	echo "active now:"; grep '^module ' /etc/ts.conf | sed 's/^/  /'
+	exit 1
+fi
+cp "$SRC" /etc/ts.conf
+echo "ts.conf -> preset $N:"
+grep '^module' /etc/ts.conf | sed 's/^/  /'
+echo "test it:  ztest      use it:  zx"

@@ -1,0 +1,75 @@
+// akita keyboard for X. per-model name, other zaurii get their own file
+// X keycode = kernel keycode + 8
+//
+// setxkbmap -symbols "akita", see .xinitrc
+//
+// has to stay self-contained with pc(pc105)+us(basic) included in here.
+// replace key only fully overrides when the base came from an include in
+// the same block. through an outer pc+us+akita chain the type and the
+// levels you don't name leak through and the F row keeps doing VT switches
+//
+// fn (61, FK03) is the level 3 shift
+
+default partial alphanumeric_keys modifier_keys
+xkb_symbols "basic" {
+    include "pc(pc105)"
+    include "us(basic)"
+
+    // all 5 levels, same VT switch reason as the buttons below
+    replace key <FK03> { type="CTRL+ALT", symbols[Group1] = [ ISO_Level3_Shift, ISO_Level3_Shift, ISO_Level3_Shift, ISO_Level3_Shift, ISO_Level3_Shift ] };
+
+    // number row: digit / shift legend / fn legend
+    replace key <AE01> { type="FOUR_LEVEL", symbols[Group1] = [ 1, exclam,     XF86ZoomOut ] };
+    replace key <AE02> { type="FOUR_LEVEL", symbols[Group1] = [ 2, quotedbl,   XF86ZoomIn ] };
+    replace key <AE03> { type="FOUR_LEVEL", symbols[Group1] = [ 3, numbersign, XF86MonBrightnessDown ] };
+    replace key <AE04> { type="FOUR_LEVEL", symbols[Group1] = [ 4, dollar,     XF86MonBrightnessUp ] };
+    replace key <AE05> { type="TWO_LEVEL",  symbols[Group1] = [ 5, percent ] };
+    replace key <AE06> { type="TWO_LEVEL",  symbols[Group1] = [ 6, ampersand ] };
+    replace key <AE07> { type="TWO_LEVEL",  symbols[Group1] = [ 7, apostrophe ] };
+    replace key <AE08> { type="TWO_LEVEL",  symbols[Group1] = [ 8, parenleft ] };
+    replace key <AE09> { type="TWO_LEVEL",  symbols[Group1] = [ 9, parenright ] };
+    replace key <AE10> { type="TWO_LEVEL",  symbols[Group1] = [ 0, asciitilde ] };
+    replace key <AE11> { type="FOUR_LEVEL", symbols[Group1] = [ minus, underscore, at ] };
+
+    replace key <BKSP> { type="FOUR_LEVEL", symbols[Group1] = [ BackSpace, BackSpace, Delete ] };
+    replace key <TAB>  { type="FOUR_LEVEL", symbols[Group1] = [ Tab, Tab, Caps_Lock ] };
+
+    // qwerty row fn legends
+    replace key <AD02> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ w, W, asciicircum ] };
+    replace key <AD03> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ e, E, equal ] };
+    replace key <AD04> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ r, R, plus ] };
+    replace key <AD05> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ t, T, bracketleft ] };
+    replace key <AD06> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ y, Y, bracketright ] };
+    replace key <AD07> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ u, U, braceleft ] };
+    replace key <AD08> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ i, I, braceright ] };
+
+    // home row fn legends
+    replace key <AC03> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ d, D, grave ] };
+    replace key <AC04> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ f, F, backslash ] };
+    replace key <AC05> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ g, G, semicolon ] };
+    replace key <AC06> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ h, H, colon ] };
+    replace key <AC07> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ j, J, asterisk ] };
+    replace key <AC09> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ l, L, bar ] };
+
+    // bottom row fn legends
+    replace key <AB02> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ x, X, XF86Cut ] };
+    replace key <AB03> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ c, C, XF86Copy ] };
+    replace key <AB04> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ v, V, XF86Paste ] };
+    replace key <AB05> { type="FOUR_LEVEL_ALPHABETIC", symbols[Group1] = [ b, B, underscore ] };
+
+    // slash fix
+    replace key <AB08> { type="FOUR_LEVEL", symbols[Group1] = [ comma,  slash,    less ] };
+    replace key <AB09> { type="FOUR_LEVEL", symbols[Group1] = [ period, question, greater ] };
+
+    // pda buttons
+    // buttons, not F keys. pc gives them a VT switch on the last level
+    // so every level gets overridden to kill it
+    replace key <FK01> { type="CTRL+ALT", symbols[Group1] = [ XF86Calendar,    XF86Calendar,    XF86Calendar,    XF86Calendar,    XF86Calendar ] };    // calendar
+    replace key <FK02> { type="CTRL+ALT", symbols[Group1] = [ XF86Addressbook, XF86Addressbook, XF86Addressbook, XF86Addressbook, XF86Addressbook ] }; // address
+    replace key <FK10> { type="CTRL+ALT", symbols[Group1] = [ XF86Mail,        XF86Mail,        XF86Mail,        XF86Mail,        XF86Mail ] };        // mail
+    replace key <PRSC> { type="CTRL+ALT", symbols[Group1] = [ XF86HomePage,    XF86HomePage,    XF86HomePage,    XF86HomePage,    XF86HomePage ] };    // home
+    replace key <FK12> { type="CTRL+ALT", symbols[Group1] = [ Menu,            Menu,            Menu,            Menu,            Menu ] };            // menu
+    replace key <FK04> { type="CTRL+ALT", symbols[Group1] = [ Escape,          Escape,          Escape,          Escape,          Escape ] };          // cancel
+    replace key <FK11> { type="CTRL+ALT", symbols[Group1] = [ Return,          Return,          Return,          Return,          Return ] };          // ok
+    // arrows already match pc
+};

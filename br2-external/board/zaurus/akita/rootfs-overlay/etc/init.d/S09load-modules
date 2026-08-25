@@ -1,0 +1,26 @@
+#!/bin/sh
+# touchscreen only, the rest is built in
+#
+# don't put sound back here. as modules the codec never loaded: modules.dep
+# misses wm8750 (named by string, not symbol) and this runs before udev
+# anyway. built into the kernel now
+
+case "$1" in
+	start)
+		printf "Loading Zaurus modules:"
+		for m in ads7846; do
+			if modprobe "$m" 2>/dev/null; then
+				printf " %s" "$m"
+			else
+				printf " %s[FAIL]" "$m"
+			fi
+		done
+		echo
+		;;
+	stop)
+		;;
+	*)
+		echo "Usage: $0 {start|stop}"
+		exit 1
+		;;
+esac

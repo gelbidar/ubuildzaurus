@@ -1,0 +1,46 @@
+#!/bin/sh
+# power button daemon, started by S12pwrbutton
+# INPUT_APMPOWER suspended in-kernel before userspace could dim, so it's
+# off now and this watches the event and calls zsleep
+
+set -u
+
+# Find the gpio-keys event node. NOTE: unlike the touchscreen (whose real
+# /proc/bus/input/devices line is "H: Handlers=mouse0 event2" - eventN as
+# its own space-separated field), gpio-keys' real line is
+# "H: Handlers=event1 apm-power" - eventN is the FIRST handler, glued
+# directly onto "Handlers=" with no space, so an ^event-anchored per-field
+# match (what zcal uses, safe there only because ads7846's eventN isn't
+# first) never matches ANY field here. Search for "eventN" anywhere inside
+# each field instead of anchoring to its start.
+dev=$(awk '
+    /^N: Name=/     { name = $0 }
+    /^H: Handlers=/ {
+        if (name ~ /gpio-keys/) {
+            for (i = 1; i <= NF; i++) {
+                n = $i
+                if (match(n, /event[0-9]+/)) {
+                    print "/dev/input/" substr(n, RSTART, RLENGTH)
+                    exit
+                }
+            }
+        }
+    }
+' /proc/bus/input/devices)
+
+if [ -z "$dev" ]; then
+    echo "zpwrd: no gpio-keys event node found - power button suspend won't work" >&2
+    exit 1
+fi
+
+# evtest prints one line per event: "Event: time S.US, type 22 (EV_PWR),
+# code N (NAME), value V". Match on the numeric type (22 = EV_PWR) and a
+# press (value 1) - not on the code name, which may not resolve to
+# "KEY_SUSPEND" by name depending on evtest's table for this event type.
+evtest "$dev" 2>/dev/null | while IFS= read -r line; do
+    case "$line" in
+        *"type 22 (EV_PWR)"*"value 1")
+            zsleep
+            ;;
+    esac
+done

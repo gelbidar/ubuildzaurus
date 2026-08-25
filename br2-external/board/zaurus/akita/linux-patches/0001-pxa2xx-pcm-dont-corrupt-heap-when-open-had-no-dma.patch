@@ -1,0 +1,36 @@
+From: Zaurus OS
+Subject: [PATCH] ASoC: pxa2xx-pcm: guard close() against a missing dmaengine runtime
+
+close() can run on a substream that never got a dmaengine runtime: open()
+returns 0 without calling snd_dmaengine_pcm_open() when the DAI has no
+dma_params, and close can run twice per substream anyway (see the
+pxa2xx-i2s patch) because snd_dmaengine_pcm_close_release_chan() kfree()s
+prtd without clearing private_data.
+
+Either way it frees something it shouldn't and corrupts the slab, which
+zeroed a snd_monitor_file's list.next and made the next close of any sound
+fd fault in snd_card_file_remove() - recursive fault, unkillable task.
+---
+--- a/sound/arm/pxa2xx-pcm-lib.c
++++ b/sound/arm/pxa2xx-pcm-lib.c
+@@ -127,7 +127,19 @@
+ 
+ int pxa2xx_pcm_close(struct snd_pcm_substream *substream)
+ {
+-	return snd_dmaengine_pcm_close_release_chan(substream);
++	int ret;
++
++	/* no runtime data means open() bailed early or we're being closed
++	 * twice. either way freeing it again trashes the slab. */
++	if (!substream->runtime || !substream->runtime->private_data)
++		return 0;
++
++	ret = snd_dmaengine_pcm_close_release_chan(substream);
++
++	/* it kfree()s prtd but leaves the pointer set */
++	substream->runtime->private_data = NULL;
++
++	return ret;
+ }
+ EXPORT_SYMBOL(pxa2xx_pcm_close);
+ 

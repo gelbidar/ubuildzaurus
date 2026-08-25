@@ -1,0 +1,24 @@
+#!/bin/sh
+# zrot N. touch orientation into /etc/ts-orient, restart X to apply
+# 1-4 landscape, 5-8 portrait. no recal needed
+set -- "$1"
+case "$1" in
+  1) O="swapxy" ;;
+  2) O="swapxy invx" ;;
+  3) O="swapxy invy" ;;
+  4) O="swapxy invx invy" ;;
+  5) O="" ;;
+  6) O="invx" ;;
+  7) O="invy" ;;
+  8) O="invx invy" ;;
+  *)
+    echo "usage: zrot N   (N = 1..8)"
+    echo "  1 swapxy            2 swapxy invx"
+    echo "  3 swapxy invy       4 swapxy invx invy   (landscape - try these)"
+    echo "  5 none              6 invx"
+    echo "  7 invy              8 invx invy          (portrait)"
+    echo "current: $(cat /etc/ts-orient 2>/dev/null)"
+    exit 1 ;;
+esac
+echo "$O" > /etc/ts-orient
+echo "ts-orient -> '$O'   (preset $1). Now: exit X and run  zx  to apply."

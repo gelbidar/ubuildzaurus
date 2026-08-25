@@ -1,0 +1,16 @@
+#!/bin/sh
+# start the power button daemon. see zpwrd
+
+case "$1" in
+	start)
+		echo "Starting power-button suspend daemon"
+		start-stop-daemon -S -b -n zpwrd -x /usr/sbin/zpwrd
+		;;
+	stop)
+		start-stop-daemon -K -n zpwrd
+		;;
+	*)
+		echo "Usage: $0 {start|stop}"
+		exit 1
+		;;
+esac

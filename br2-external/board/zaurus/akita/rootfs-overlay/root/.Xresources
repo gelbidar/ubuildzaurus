@@ -1,0 +1,20 @@
+! Persistent X resources - loaded once via `xrdb -merge` in .xinitrc, so
+! these apply to EVERY xterm for the rest of the session (launcher-started,
+! typed from another terminal, etc), not just one specific invocation.
+!
+! Black background instead of xterm's compiled-in white-on-black default.
+! Font: "10x20" (misc-misc bitmap set) is already the LARGEST fixed-width
+! bitmap font installed - nothing bigger to switch to - so this uses the
+! already-installed scalable DejaVu Sans Mono (Xft/TrueType) instead.
+!
+! faceSize has been guessed wrong twice now (12 too big, 10 still too big -
+! a plain points*dpi/72 estimate clearly isn't matching what this actually
+! renders at). Use `zxfont N` (usr/sbin/zxfont) to open test xterms at a
+! few sizes and see what actually looks right, rather than guess again -
+! then tell me the number and this becomes the permanent default. 7 here
+! now is a deliberately conservative correction, not a confirmed answer.
+XTerm*background: black
+XTerm*foreground: white
+XTerm*faceName: DejaVu Sans Mono
+XTerm*faceSize: 7
+XTerm*geometry: 44x22

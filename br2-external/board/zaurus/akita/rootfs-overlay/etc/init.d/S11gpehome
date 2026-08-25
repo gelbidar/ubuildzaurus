@@ -1,0 +1,15 @@
+#!/bin/sh
+# gpe apps open a sqlite db in ~/.gpe but never mkdir it, and sqlite2
+# won't make parents. they die at startup without this
+
+case "$1" in
+	start)
+		mkdir -p /root/.gpe
+		;;
+	stop)
+		;;
+	*)
+		echo "Usage: $0 {start|stop}"
+		exit 1
+		;;
+esac

@@ -1,0 +1,16 @@
+config BR2_PACKAGE_LIBGPEWIDGET
+	bool "libgpewidget"
+	depends on BR2_PACKAGE_LIBGTK2
+	# libgtk2 already selects libglib2, cairo and xlib_libX11, which is
+	# everything else this needs at build time.
+	select BR2_PACKAGE_GPE_ICONS # runtime: gpe_load_icons()
+	help
+	  The shared widget/utility library of the GPE Palmtop Environment:
+	  PDA-sized dialogs, icon list views, a date combo, a clock face,
+	  stylus (tap-and-hold) helpers, tray/window-list wrappers, and the
+	  gpe_load_icons() pixmap loader every GPE app starts with.
+
+	  Hard prerequisite for gpe-edit, gpe-todo, gpe-sketchbook and the
+	  GPE PIM libraries.
+
+	  http://gpe.linuxtogo.org/ (defunct; sourced from the Debian archive)

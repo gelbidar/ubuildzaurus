@@ -1,0 +1,12 @@
+config BR2_PACKAGE_LIBTODODB
+	bool "libtododb"
+	depends on BR2_PACKAGE_LIBGTK2
+	select BR2_PACKAGE_LIBGPEPIMC
+	select BR2_PACKAGE_SQLITE2
+	help
+	  The GPE to-do item database library: the sqlite-backed store
+	  (~/.gpe/todo.db) shared by gpe-todo and the GPE PIM sync tools.
+
+	  Required by gpe-todo.
+
+	  http://gpe.linuxtogo.org/ (defunct; sourced from the Debian archive)

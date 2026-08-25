@@ -1,0 +1,272 @@
+#!/bin/sh
+# zkeymap - walk every key and log the real kernel keycodes. text console,
+# not under X. this is what the console keymap and xkb layout get built from
+#
+# asks for one key at a time and records the raw keycodes via showkey, which
+# is what xkb consumes. makes no assumption about which key produces what -
+# for the "type this character" steps press whatever actually produces it.
+#
+# every step waits for ENTER, nothing advances on a timer.
+#
+# writes /root/zkeymap-<timestamp>.log, symlinked as zkeymap-latest.log
+
+set -u
+
+# ---- sanity: not under X, tools present -------------------------------------
+if pidof Xfbdev >/dev/null 2>&1; then
+    echo "zkeymap: X is running. Quit X first (exit the xterm / matchbox),"
+    echo "         then run zkeymap from the text console."
+    exit 1
+fi
+if ! command -v showkey >/dev/null 2>&1; then
+    echo "zkeymap: 'showkey' not found - your flashed image predates the kbd"
+    echo "         package. Reflash the latest build, then run zkeymap again."
+    exit 1
+fi
+
+STAMP=$(date +%Y%m%d-%H%M%S 2>/dev/null || echo now)
+LOG="/root/zkeymap-$STAMP.log"
+ln -sf "$LOG" /root/zkeymap-latest.log 2>/dev/null
+
+# showkey puts the console keyboard in raw mode; make sure we always restore it.
+restore() { kbd_mode -a 2>/dev/null; stty sane 2>/dev/null; }
+trap 'restore' EXIT INT TERM
+
+log()  { printf '%s\n' "$*" >>"$LOG"; }        # to log only
+both() { printf '%s\n' "$*"; printf '%s\n' "$*" >>"$LOG"; }  # to screen + log
+
+# Block until ENTER is pressed. Always restore cooked mode first, since a
+# prior showkey call leaves the tty raw.
+pause() {
+    stty sane 2>/dev/null
+    printf "  %s" "${1:-[press ENTER to continue] }"
+    # shellcheck disable=SC2034
+    read -r _zkeymap_wait
+}
+
+TOTAL=0
+INDEX=0
+
+# One capture step, fully user-paced:
+#   SECTION - which list this item is from (BASE / FUNCTION / SHIFT / BUTTON)
+#   LABEL   - the exact key/char/button name from your list
+#   INSTR   - what to physically do
+cap() {
+    _section="$1"; _label="$2"; _instr="$3"
+    INDEX=$((INDEX + 1))
+    printf '\n### %s: %s ###\n' "$_section" "$_label" >>"$LOG"
+    echo ""
+    echo "  [$INDEX/$TOTAL] $_section: $_label"
+    echo "  $_instr"
+    pause "Press ENTER when you're ready to do it > "
+    echo "  Go - do it now..."
+    showkey --keycodes -t 6 >>"$LOG" 2>&1
+    echo "  Captured."
+    pause "Press ENTER for the next one > "
+}
+
+# =============================================================================
+both "zkeymap: writing to $LOG"
+both "This walks your exact key list, one at a time. Nothing runs on a timer -"
+both "every step waits for ENTER before it does anything."
+pause "Press ENTER to begin > "
+
+# ---- Phase 0: static device / keymap dump -----------------------------------
+log "===================== ZKEYMAP LOG ($STAMP) ====================="
+log "--- uname ---";              uname -a            >>"$LOG" 2>&1
+log "";  log "--- /proc/bus/input/devices ---"
+cat /proc/bus/input/devices                            >>"$LOG" 2>&1
+log "";  log "--- keyboard capabilities (per kbd-handler node) ---"
+for ev in $(awk '
+        /^N: Name=/     { name=$0 }
+        /^H: Handlers=/ { if ($0 ~ /kbd/) for (i=1;i<=NF;i++) if ($i ~ /^event/) print $i }
+    ' /proc/bus/input/devices); do
+    log "  [$ev]"
+    log "    name: $(cat /sys/class/input/$ev/device/name 2>/dev/null)"
+    log "    ev  : $(cat /sys/class/input/$ev/device/capabilities/ev  2>/dev/null)"
+    log "    key : $(cat /sys/class/input/$ev/device/capabilities/key 2>/dev/null)"
+done
+log "";  log "--- dumpkeys (current console keymap) ---"
+dumpkeys                                                >>"$LOG" 2>&1
+log "================================================================"
+
+# ---- Key lists, exactly as given, one item per line --------------------------
+# BASE: physical keys, pressed by themselves (no modifier).
+BASE_LIST='
+1
+2
+3
+4
+5
+6
+7
+8
+9
+0
+Backspace
+Q
+W
+E
+R
+T
+Y
+U
+I
+O
+P
+Tab
+A
+S
+D
+F
+G
+H
+J
+K
+L
+LeftShift
+Z
+X
+C
+V
+B
+N
+M
+RightShift
+Enter
+Fn
+Ctrl
+-
+Space
+,
+.
+'
+
+# FUNCTION: results reached via a function/Fn layer or dedicated key - press
+# whatever combination on YOUR keyboard actually produces each one.
+FUNCTION_LIST='
+zoomout
+zoomin
+brightnessdown
+brightnessup
+delete
+capslock
+=
++
+[
+]
+{
+}
+`
+\
+;
+:
+*
+|
+cut
+copy
+paste
+_
+@
+<
+>
+'
+
+# SHIFT: characters reached via Shift - press whatever combination on YOUR
+# keyboard actually produces each one.
+SHIFT_LIST='
+!
+"
+#
+$
+%
+&
+'"'"'
+(
+)
+~
+/
+?
+'
+
+# BUTTON: dedicated physical buttons.
+BUTTON_LIST='
+calendar
+address
+mail
+home
+menu
+cancel
+ok
+up
+down
+left
+right
+'
+
+count_items() { printf '%s\n' "$1" | grep -c '.'; }
+TOTAL=$(( $(count_items "$BASE_LIST") + $(count_items "$FUNCTION_LIST") \
+        + $(count_items "$SHIFT_LIST") + $(count_items "$BUTTON_LIST") ))
+
+# NOTE: `set --` only affects positional params in the CURRENT scope - inside
+# a function, that scope is discarded when the function returns (POSIX; not a
+# busybox quirk). So the list->"$@" loading below is inlined at each phase
+# instead of going through a helper function, and INDEX (a plain variable,
+# not a positional param) still accumulates correctly across phases via cap().
+
+# ---- Phase 1: BASE physical keys ---------------------------------------------
+both ""
+both "PHASE 1 - Base keys. Press each one by itself, no modifier."
+pause "Press ENTER to start Phase 1 > "
+_items=$(printf '%s\n' "$BASE_LIST" | grep '.')
+set -f; IFS='
+'; set -- $_items; unset IFS; set +f
+for k; do
+    cap "BASE" "$k" "Press the physical key: '$k'"
+done
+
+# ---- Phase 2: FUNCTION-layer results ------------------------------------------
+both ""
+both "PHASE 2 - Function-layer keys. For each one, do whatever you do on this"
+both "keyboard to produce it (dedicated key, Fn+key, etc). / is not in this"
+both "list on your keyboard - that's expected, it's under Phase 3 (Shift)."
+pause "Press ENTER to start Phase 2 > "
+_items=$(printf '%s\n' "$FUNCTION_LIST" | grep '.')
+set -f; IFS='
+'; set -- $_items; unset IFS; set +f
+for k; do
+    cap "FUNCTION" "$k" "Produce: '$k'  (however you actually do it)"
+done
+
+# ---- Phase 3: SHIFT-layer characters ------------------------------------------
+both ""
+both "PHASE 3 - Shift characters. TOP PRIORITY: '/' is in this list."
+both "For each one, do whatever you do on this keyboard to produce it."
+pause "Press ENTER to start Phase 3 > "
+_items=$(printf '%s\n' "$SHIFT_LIST" | grep '.')
+set -f; IFS='
+'; set -- $_items; unset IFS; set +f
+for k; do
+    cap "SHIFT" "$k" "Produce: '$k'  (however you actually do it)"
+done
+
+# ---- Phase 4: dedicated BUTTONS -----------------------------------------------
+both ""
+both "PHASE 4 - Dedicated buttons."
+pause "Press ENTER to start Phase 4 > "
+_items=$(printf '%s\n' "$BUTTON_LIST" | grep '.')
+set -f; IFS='
+'; set -- $_items; unset IFS; set +f
+for k; do
+    cap "BUTTON" "$k" "Press the physical button: '$k'"
+done
+
+# ---- done -------------------------------------------------------------------
+restore
+log ""; log "===================== END ZKEYMAP LOG ====================="
+both ""
+both "Done. Log saved to:"
+both "   $LOG"
+both "(also /root/zkeymap-latest.log)"
+both ""
+both "Copy that off the card to build a keymap from."

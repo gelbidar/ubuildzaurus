@@ -1,0 +1,67 @@
+From: Zaurus OS build
+Subject: [PATCH] link against libX11 explicitly
+
+libgpewidget uses Xlib directly (gpewindowlist.c, tray.c, stylus.c,
+screensize.c, popup.c, translabel.c, gpewindowbits.c, infoprint.c) but
+never asked for -lX11: it relied on the linker resolving those symbols
+indirectly through libgtk-x11-2.0's own DT_NEEDED. Modern binutils
+refuses that ("undefined reference to symbol 'XFlush' ... DSO missing
+from the command line"), so the bundled infoprint helper fails to link.
+
+Add -lX11 to both the library and infoprint, use the libtool archive for
+infoprint (-lgpewidget could pick up a stale copy from the staging dir),
+and advertise x11 in the .pc so downstream GPE apps inherit it too.
+
+Both Makefile.am and Makefile.in are patched so no autoreconf is needed
+(this release ships a usable pre-generated build system).
+
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -30,7 +30,7 @@
+                           color-slider.c colordialog.c link-warning.h \
+                           colorrenderer.c
+                           
+-libgpewidget_la_LDFLAGS = @GPEWIDGET_LIBS@ @HILDON_LIBS@ -version-info 1:0:0
++libgpewidget_la_LDFLAGS = @GPEWIDGET_LIBS@ @HILDON_LIBS@ -lX11 -version-info 1:0:0
+ 
+ gpeincludedir = $(includedir)/gpe
+ gpeinclude_HEADERS = gpe/init.h gpe/errorbox.h gpe/smallbox.h gpe/pixmaps.h gpe/gtkdatecombo.h \
+@@ -52,7 +52,7 @@
+ bin_PROGRAMS = infoprint
+ infoprint_DEPENDENCIES = libgpewidget.la
+ infoprint_SOURCES = infoprint-main.c
+-infoprint_LDADD = -lgpewidget
++infoprint_LDADD = libgpewidget.la @GPEWIDGET_LIBS@ -lX11
+ 
+ EXTRA_DIST = $(pixmap_DATA) \
+              intltool-extract.in \
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -304,7 +304,7 @@
+                           color-slider.c colordialog.c link-warning.h \
+                           colorrenderer.c
+ 
+-libgpewidget_la_LDFLAGS = @GPEWIDGET_LIBS@ @HILDON_LIBS@ -version-info 1:0:0
++libgpewidget_la_LDFLAGS = @GPEWIDGET_LIBS@ @HILDON_LIBS@ -lX11 -version-info 1:0:0
+ gpeincludedir = $(includedir)/gpe
+ gpeinclude_HEADERS = gpe/init.h gpe/errorbox.h gpe/smallbox.h gpe/pixmaps.h gpe/gtkdatecombo.h \
+                      gpe/dirbrowser.h gpe/stylus.h gpe/picturebutton.h gpe/spacing.h \
+@@ -321,7 +321,7 @@
+ pixmap_DATA = pixmaps/clock.png pixmaps/clock24.png pixmaps/day-night-wheel.png
+ infoprint_DEPENDENCIES = libgpewidget.la
+ infoprint_SOURCES = infoprint-main.c
+-infoprint_LDADD = -lgpewidget
++infoprint_LDADD = libgpewidget.la @GPEWIDGET_LIBS@ -lX11
+ EXTRA_DIST = $(pixmap_DATA) \
+              intltool-extract.in \
+              intltool-merge.in \
+--- a/libgpewidget.pc.in
++++ b/libgpewidget.pc.in
+@@ -6,6 +6,6 @@
+ Name: libgpewidget
+ Description: GPE Widget Library
+ Version: @VERSION@
+-Requires: gtk+-2.0
++Requires: gtk+-2.0 x11
+ Libs: -L${libdir} -lgpewidget
+ Cflags: -I${includedir}

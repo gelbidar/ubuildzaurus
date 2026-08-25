@@ -1,0 +1,80 @@
+From: Zaurus OS
+Subject: [PATCH] src/io_mpg123.c: parse modern mpg123's -v status line
+
+gqmpeg reads playback position off mpg123's stderr and expects the old
+"Frame# N [M], Time: ..." format. mpg123 1.x prints a terser line starting
+with its play state symbol, so the parser never matched and every status
+line fell through to handle_warnings()'s printf - clock stuck at 0:00:00
+and the CPU burned printing warnings.
+
+Add a parser for the new format, used when the old one doesn't match.
+---
+--- a/src/io_mpg123.c
++++ b/src/io_mpg123.c
+@@ -332,7 +332,9 @@
+ /* parse the output to get the current song position
+  * including seconds and frames (played and remaining)
+  */
+-static gint parse_frame_info(gchar *text)
++/* mpg123 1.x status line, first char is the play state symbol so the
++ * "Frame#" parser below never matches it */
++static gint parse_frame_info_modern(gchar *text)
+ {
+ 	gchar *ptr;
+ 
+@@ -343,7 +345,54 @@
+ 	gint min_cnt;
+ 	gint min_cnt_rem;
+ 
+-	if (strncmp(text, "Frame", 5) != 0 || text[6] == '\0') return FALSE;
++	if ((text[0] != '>' && text[0] != '_' && text[0] != '=' && text[0] != '?')
++	    || text[1] != ' ' || text[2] < '0' || text[2] > '9')
++		return FALSE;
++
++	ptr = text + 1;
++
++	frame_cnt = parse_till_char(&ptr, '+');
++	if (*ptr == '\0') return TRUE;
++	ptr++;
++
++	frame_cnt_rem = parse_till_char(&ptr, ' ');
++	if (*ptr == '\0') return TRUE;
++	ptr++;
++
++	min_cnt = parse_till_char(&ptr, ':');
++	if (*ptr == '\0') return TRUE;
++	ptr++;
++
++	sec_cnt = parse_till_char(&ptr, '+');
++	if (*ptr == '\0') return TRUE;
++	ptr++;
++
++	min_cnt_rem = parse_till_char(&ptr, ':');
++	if (*ptr == '\0') return TRUE;
++	ptr++;
++
++	sec_cnt_rem = parse_till_char(&ptr, ' ');
++
++	frames = frame_cnt;
++	frames_remaining = frame_cnt_rem;
++	seconds = min_cnt * 60 + sec_cnt;
++	seconds_remaining = min_cnt_rem * 60 + sec_cnt_rem;
++
++	return TRUE;
++}
++
++static gint parse_frame_info(gchar *text)
++{
++	gchar *ptr;
++
++	gint frame_cnt;
++	gint frame_cnt_rem;
++	gint sec_cnt;
++	gint sec_cnt_rem;
++	gint min_cnt;
++	gint min_cnt_rem;
++
++	if (strncmp(text, "Frame", 5) != 0 || text[6] == '\0') return parse_frame_info_modern(text);
+ 
+ 	if (debug_mode > 2) printf("Frame\n");
+ 

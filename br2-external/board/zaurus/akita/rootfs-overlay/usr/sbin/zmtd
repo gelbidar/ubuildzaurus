@@ -1,0 +1,16 @@
+#!/bin/sh
+# dump nand layout + cmdline for the boot chain work. read only
+echo "==== NAND PARTITIONS (dev : size : erasesize : name) ===="
+cat /proc/mtd
+echo
+echo "==== CURRENT KERNEL CMDLINE ===="
+cat /proc/cmdline
+echo
+echo "==== KERNEL PARTITION SIZE IN KB (per mtd) ===="
+for d in /sys/class/mtd/mtd*/size; do
+	n=$(cat "${d%size}name" 2>/dev/null)
+	kb=$(( $(cat "$d") / 1024 ))
+	echo "$(dirname "$d" | sed 's#.*/##') : ${kb} KB : ${n}"
+done
+echo
+echo "==== our zImage is about 3.66 MB (3750 KB) for comparison ===="

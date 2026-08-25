@@ -1,0 +1,4 @@
+# Locally calculated (SourceForge doesn't publish a checksum page for this
+# old a release; re-downloaded and re-hashed to confirm stable)
+sha256  78502bf9b9119c9d4495a640e7467c67aa992b30d8b5b2a51c1db86ada045df5  gqmpeg-0.91.1.tar.gz
+sha256  32b1062f7da84967e7019d01ab805935caa7ab7321a7ced0e30ebe75e5df1670  COPYING
