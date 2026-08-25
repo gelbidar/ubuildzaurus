@@ -1,4 +1,4 @@
-// akita keyboard for X. per-model name, other zaurii get their own file
+// Zaurus keyboard for X, tested on Akita
 // X keycode = kernel keycode + 8
 //
 // setxkbmap -symbols "akita", see .xinitrc
