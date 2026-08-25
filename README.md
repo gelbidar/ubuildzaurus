@@ -23,7 +23,7 @@ reproducible and a diff shows exactly what changed.
 Build an image:
 
 ```sh
-git clone <repo-url> ubuildzaurus
+git clone https://github.com/gelbidar/ubuildzaurus.git
 cd ubuildzaurus
 ./build.sh
 ```
